@@ -1,0 +1,29 @@
+{
+    "name": "Temnorid.Arena.Menus",
+    "rootNamespace": "Temnorid.Arena.Menus",
+    "references": [
+        "ITKamianets.Engine.Core",
+        "ITKamianets.Engine.Input",
+        "ITKamianets.Engine.Audio",
+        "ITKamianets.Engine.Network",
+        "ITKamianets.Engine.Firebase",
+        "Temnorid.Arena.Core",
+        "Unity.InputSystem",
+        "UnityEngine.UI",
+        "Unity.TextMeshPro",
+        "Temnorid.Arena.Hud",
+        "Unity.Netcode.Runtime",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

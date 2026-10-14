@@ -1,0 +1,28 @@
+{
+  "name": "com.itkamianets.temnorid-arena-menus",
+  "version": "0.1.0",
+  "displayName": "Temnorid Arena: Menus",
+  "description": "Temnorid Arena menus around a match: start, find a match, lobby, settings, results.",
+  "unity": "6000.6",
+  "license": "MIT",
+  "author": {
+    "name": "IT Kamianets"
+  },
+  "keywords": [
+    "temnorid-arena",
+    "3d-engine",
+    "it-kamianets"
+  ],
+  "dependencies": {
+    "com.itkamianets.3d-unity-core": "0.1.0",
+    "com.itkamianets.3d-unity-input": "0.1.0",
+    "com.itkamianets.3d-unity-audio": "0.1.0",
+    "com.itkamianets.3d-unity-network": "0.1.0",
+    "com.itkamianets.3d-unity-firebase": "0.1.0",
+    "com.itkamianets.temnorid-arena-core": "0.1.0",
+    "com.unity.ugui": "2.6.0",
+    "com.itkamianets.temnorid-arena-hud": "0.1.0",
+    "com.unity.nuget.newtonsoft-json": "3.2.2",
+    "com.unity.netcode.gameobjects": "2.13.3"
+  }
+}
