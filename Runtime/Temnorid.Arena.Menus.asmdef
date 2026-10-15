@@ -4,6 +4,7 @@
     "references": [
         "ITKamianets.Engine.Core",
         "ITKamianets.Engine.Input",
+        "ITKamianets.Engine.XR",
         "ITKamianets.Engine.Audio",
         "ITKamianets.Engine.Network",
         "ITKamianets.Engine.Firebase",

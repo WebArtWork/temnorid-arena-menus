@@ -4,6 +4,7 @@ using ITKamianets.Engine.Audio;
 using ITKamianets.Engine.Core;
 using ITKamianets.Engine.Firebase;
 using ITKamianets.Engine.Input;
+using ITKamianets.Engine.XR;
 using ITKamianets.Engine.Network;
 using Newtonsoft.Json.Linq;
 using Temnorid.Arena.Core;
@@ -21,6 +22,9 @@ namespace Temnorid.Arena.Menus
     /// (volumes, mouse sensitivity, invert look) saved per player. With a Firebase config it signs
     /// the player in, keeps their name in their profile and adds each match's kills and deaths to
     /// their saved stats. Builds itself in code; add one to the arena scene.
+    ///
+    /// On phones: 60 frames per second (iOS defaults to 30), the screen stays on during a match,
+    /// and there is no Quit on iOS (apps there are closed by the system, not by themselves).
     /// </summary>
     public class ArenaMenus : MonoBehaviour
     {
@@ -36,6 +40,8 @@ namespace Temnorid.Arena.Menus
         [SerializeField] private string defaultAddress = "127.0.0.1";
 
         private Canvas _canvas;
+        private readonly System.Collections.Generic.List<GameObject> _flatSettings = new System.Collections.Generic.List<GameObject>();
+        private readonly System.Collections.Generic.List<GameObject> _vrSettings = new System.Collections.Generic.List<GameObject>();
         private GameObject _main;
         private GameObject _pause;
         private GameObject _settings;
@@ -57,6 +63,11 @@ namespace Temnorid.Arena.Menus
 
         private void Start()
         {
+            if (Application.isMobilePlatform)
+            {
+                Application.targetFrameRate = 60;
+            }
+
             ApplySavedInputSettings();
             Build();
             ShowMain();
@@ -70,6 +81,9 @@ namespace Temnorid.Arena.Menus
             if (inMatch != _inMatch)
             {
                 _inMatch = inMatch;
+
+                // No dimming or locking in the middle of a match on a phone.
+                UnityEngine.Screen.sleepTimeout = inMatch ? SleepTimeout.NeverSleep : SleepTimeout.SystemSetting;
                 if (inMatch)
                 {
                     HideAll();
@@ -253,7 +267,10 @@ namespace Temnorid.Arena.Menus
             _address = ArenaUi.Field(column, "Server address", defaultAddress);
             ArenaUi.Button(column, "Join", Join);
             ArenaUi.Button(column, "Settings", () => Show(_settings));
-            ArenaUi.Button(column, "Quit", Quit);
+            if (Application.platform != RuntimePlatform.IPhonePlayer)
+            {
+                ArenaUi.Button(column, "Quit", Quit);
+            }
             var statusRect = ArenaUi.Box("Status", _main.transform, new Vector2(0.5f, 0.08f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1200f, 50f));
             _status = ArenaUi.Label(statusRect, string.Empty, 24f, ArenaUi.Muted, TMPro.TextAlignmentOptions.Center);
 
@@ -270,7 +287,7 @@ namespace Temnorid.Arena.Menus
             ArenaUi.Slider(settingsColumn, "Effects volume", audio.GetVolume(SoundGroup.Effects), v => audio.SetVolume(SoundGroup.Effects, v));
             ArenaUi.Slider(settingsColumn, "Music volume", audio.GetVolume(SoundGroup.Music), v => audio.SetVolume(SoundGroup.Music, v));
             var sensitivity = Mathf.InverseLerp(0.02f, 0.3f, EngineInput.Default.PointerDegreesPerPixel);
-            ArenaUi.Slider(settingsColumn, "Mouse sensitivity", sensitivity, SetSensitivity);
+            _flatSettings.Add(ArenaUi.Slider(settingsColumn, "Look sensitivity", sensitivity, SetSensitivity).gameObject);
             UnityEngine.UI.Button invert = null;
             invert = ArenaUi.Button(settingsColumn, InvertLabel(), () =>
             {
@@ -280,7 +297,51 @@ namespace Temnorid.Arena.Menus
                 EngineStorage.Current.Save();
                 invert.GetComponentInChildren<TMP_Text>().text = InvertLabel();
             });
+            _flatSettings.Add(invert.gameObject);
+
+            // VR comfort and handedness, shown only in a headset.
+            UnityEngine.UI.Button turn = null;
+            turn = ArenaUi.Button(settingsColumn, TurnLabel(), () =>
+            {
+                var comfort = XRComfort.Current;
+                comfort.SnapTurn = !comfort.SnapTurn;
+                comfort.Save();
+                turn.GetComponentInChildren<TMP_Text>().text = TurnLabel();
+            });
+            UnityEngine.UI.Button vignette = null;
+            vignette = ArenaUi.Button(settingsColumn, VignetteLabel(), () =>
+            {
+                var comfort = XRComfort.Current;
+                comfort.Vignette = !comfort.Vignette;
+                comfort.Save();
+                vignette.GetComponentInChildren<TMP_Text>().text = VignetteLabel();
+            });
+            UnityEngine.UI.Button hand = null;
+            hand = ArenaUi.Button(settingsColumn, HandLabel(), () =>
+            {
+                var input = EngineInput.Default;
+                input.DominantHand = input.DominantHand == HandSide.Right ? HandSide.Left : HandSide.Right;
+                hand.GetComponentInChildren<TMP_Text>().text = HandLabel();
+            });
+            _vrSettings.Add(turn.gameObject);
+            _vrSettings.Add(vignette.gameObject);
+            _vrSettings.Add(hand.gameObject);
             ArenaUi.Button(settingsColumn, "Back", () => Show(_returnTo != null ? _returnTo : _main));
+        }
+
+        private static string TurnLabel()
+        {
+            return XRComfort.Current.SnapTurn ? "Turning: snap" : "Turning: smooth";
+        }
+
+        private static string VignetteLabel()
+        {
+            return XRComfort.Current.Vignette ? "Comfort vignette: on" : "Comfort vignette: off";
+        }
+
+        private static string HandLabel()
+        {
+            return EngineInput.Default.DominantHand == HandSide.Right ? "Casting hand: right" : "Casting hand: left";
         }
 
         private static string InvertLabel()
@@ -311,9 +372,27 @@ namespace Temnorid.Arena.Menus
                 _returnTo = screen;
             }
 
+            var wasHidden = !_main.activeSelf && !_pause.activeSelf && !_settings.activeSelf;
             _main.SetActive(screen == _main);
             _pause.SetActive(screen == _pause);
             _settings.SetActive(screen == _settings);
+
+            var vr = XRStatus.IsActive;
+            foreach (var item in _flatSettings)
+            {
+                item.SetActive(!vr);
+            }
+
+            foreach (var item in _vrSettings)
+            {
+                item.SetActive(vr);
+            }
+
+            // VR: a menu that opens comes up in front of the player.
+            if (wasHidden)
+            {
+                _canvas.GetComponent<ArenaVRCanvas>()?.Recenter();
+            }
 
             // A menu takes the mouse; gameplay input waits.
             EngineInput.Default.PlayerEnabled = false;

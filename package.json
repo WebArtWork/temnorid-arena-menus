@@ -23,6 +23,7 @@
     "com.unity.ugui": "2.6.0",
     "com.itkamianets.temnorid-arena-hud": "0.1.0",
     "com.unity.nuget.newtonsoft-json": "3.2.2",
-    "com.unity.netcode.gameobjects": "2.13.3"
+    "com.unity.netcode.gameobjects": "2.13.3",
+    "com.itkamianets.3d-unity-xr": "0.1.0"
   }
 }
